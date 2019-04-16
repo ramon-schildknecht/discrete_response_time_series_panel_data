@@ -1,1 +1,1 @@
-# discrete_response_time_series_panel_data
+# Discrete Response, Time Series & Panel Data Modul Master of Science in applied Information and Data Science
