@@ -232,7 +232,6 @@ ts_no_seasonality <- ts - d_decomposed$seasonal
 # d_decomposed$random - ts_no_seasonality_and_no_trend
 
 # apply linear trend elimination
-install.packages("pracma")
 ts_no_seasonality_no_linear_trend <- pracma::detrend(ts_no_seasonality, tt = "linear")
 
 # plot data
