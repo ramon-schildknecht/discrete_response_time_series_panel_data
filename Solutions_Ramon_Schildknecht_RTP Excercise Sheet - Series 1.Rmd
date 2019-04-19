@@ -1,6 +1,8 @@
 ---
 title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 1"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r message=FALSE, warning=FALSE}
@@ -10,6 +12,7 @@ library(plotly)
 library(timetk)
 library(lubridate)
 library(plotly)
+library(pracma)
 ```
 
 
@@ -188,24 +191,103 @@ levels(d_extended$month) = c("Januar", "Februar", "März", "April", "Mai", "Juni
 
 ## Exercice 1.6
 
-a) 
-b) 
-c) 
-d) 
+a) period: year & time step: day 
+b) period: year & time step: day 
+c) period: weeks & time step: hours to day 
+d) period: year & time step: minutes to day  
 
-```{r}
 
-```
 
 ## Exercice 1.7
 
 ```{r}
+d <- read.table("hstart.dat.txt")
+ts <- ts(d, start = c(1966, 1), end = c(1974, 12), frequency = 12)
+
+# a) 
+(hstart_plot <- plot_ly(x = ~time(ts) , y = ~ts, mode = 'lines'))
+
+# b)
+# skipped loess method, decompose is easier to use
+d_decomposed = decompose(ts, "additive")
+plot(as.ts(d_decomposed$seasonal))
+plot(as.ts(d_decomposed$trend))
+plot(as.ts(d_decomposed$random))
+plot(d_decomposed)
+```
+
+a) + b) time series is not stationary. Points (1), (2) and (3) mentioned below in Exercice 1.8 are not met. 
+One can see a clear yearly trend. One can further recognize a trend with two peaks. 
+Conclusion: Get seasonality and trend component out of the time series. 
+
+c) do not know how to code the special filter
+
+
+```{r}
+# d)
+# remove trend
+ts_no_seasonality <- ts - d_decomposed$seasonal
+# ts_no_seasonality_and_no_trend <- ts_no_seasonality - d_decomposed$trend
+# check results
+# d_decomposed$random - ts_no_seasonality_and_no_trend
+
+# apply linear trend elimination
+install.packages("pracma")
+ts_no_seasonality_no_linear_trend <- pracma::detrend(ts_no_seasonality, tt = "linear")
+
+# plot data
+(hstart_plot_2 <- plot_ly(x = ~time(ts) , y = ~ts_no_seasonality_no_linear_trend, mode = 'lines'))
 
 ```
+
+
+
 
 ## Exercice 1.8
 
-```{r}
+Stationarity if...
+- (1) all Xt are identically distributed 
+- (2) regular mean 
+- (3) finit and regular variance 
+- (4) autocovariance dependes only on lag 
+
+
+```{r warning=FALSE}
+# a)
+Et <- rnorm(100, 0, 1)
+Et_1 <- diff(Et)
+model <- Et[2:100] - (0.5 * Et_1)
+ts <- ts(model)
+(Y1_plot <- plot_ly(x = ~c(1:99), y = ~model, mode = 'lines'))
+acf(ts)
+pacf(ts)
 
 ```
+
+a) all criterias are allright - this time series is stationary.
+
+
+b - d) do not understand questions. What is Yt compared with Et?
+
+
+```{r}
+# b)
+Et <- rnorm(100, 0, 1)
+Et_1 <- diff(Et)
+model <- Et[2:100] - (0.5 * Et_1)
+ts <- ts(model)
+(Y1_plot <- plot_ly(x = ~c(1:99), y = ~model, mode = 'lines'))
+acf(ts)
+pacf(ts)
+
+```
+
+
+
+
+
+
+
+
+
 
