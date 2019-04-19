@@ -8,6 +8,8 @@ library(tseries)
 library(tidyverse)
 library(plotly)
 library(timetk)
+library(lubridate)
+library(plotly)
 ```
 
 
@@ -101,16 +103,95 @@ d_diff_index <- tk_index(d_diff)
 ## Exercice 1.4
 
 ```{r}
-# hier weiter
+# help trough https://anomaly.io/seasonal-trend-decomposition-in-r/
+d <- co2
+d_stl <- stl(d, s.window = "periodic")
+plot(d_stl)
+plot(d_stl, xlim=c(1960, 1961))
+
+# seasonal part:
+d_trend <- d_stl$time.series[, 2]
+d_season <- d_stl$time.series[, 1]
+d_random <- d_stl$time.series[, 3]
+# check if it worked correctly
+head(d-(d_trend+d_season+d_random))
+# success - worked!
+
+trend_removed <- d - d_trend
+month <- factor(rep(1:12, 39))
+print("Season means by month")
+(seasn_est <- tapply(trend_removed, month, mean, na.rm = TRUE))
 ```
+
+```{r}
+# decompose gives same results as stl()
+d_decomposed = decompose(d, "additive")
+plot(as.ts(d_decomposed$seasonal))
+plot(as.ts(d_decomposed$trend))
+plot(as.ts(d_decomposed$random))
+plot(d_decomposed)
+```
+
 
 ## Exercice 1.5
 
 ```{r}
+# a)
+d <- read.table(file = "rainDay.txt")
+d$DATE <- dmy(d$DATE)
+glimpse(d)
 
+# b)
+d_ts <- ts(data = d$rain, start = c(2000, 1), end = c(2007, 12), frequency = 12)
+
+# c)
+d_extended <- d %>% 
+  mutate(day_of_week = as.factor(weekdays(DATE)),
+         month = as.factor(months(DATE)),
+         quarter = as.factor(quarters(DATE))) 
+glimpse(d_extended) # worked!
+
+hist(d_ts)
+# hint: the series is right skewed - one should log transform it but...
+
+par(mfrow=c(2,1)) 
+plot(d_ts)
+plot(log(d_ts))
+
+# ... one do not log transform in this case --> otherwise we lose observations!
+# additionally: the time series is not multiplicative
+
+# d)
+# set logical order for weekday and month
+levels(d_extended$day_of_week) = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+
+levels(d_extended$month) = c("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
+
+(weekday_boxplot <- d_extended %>%
+  # group_by(day_of_week) %>% 
+  # mutate(sum_rain_daily = sum(rain)) %>% 
+  # distinct(day_of_week, .keep_all = T) %>% 
+  # ungroup() %>% 
+  # select(day_of_week, rain) %>% 
+  plot_ly(y = ~rain, color = ~day_of_week, type = "box"))
+
+(monthly_boxplot <- d_extended %>%
+  plot_ly(y = ~rain, color = ~month, type = "box"))
+
+(quarter_boxplot <- d_extended %>%
+  plot_ly(y = ~rain, color = ~quarter, type = "box"))
+
+# e) 
+(rain_plot <- plot_ly(x = ~d$DATE, y = ~d$rain, mode = 'lines'))
+  
 ```
 
 ## Exercice 1.6
+
+a) 
+b) 
+c) 
+d) 
 
 ```{r}
 
