@@ -1,0 +1,292 @@
+---
+title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 2"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tseries)
+library(tidyverse)
+library(plotly)
+library(timetk)
+library(lubridate)
+library(plotly)
+library(pracma)
+```
+
+
+# Series 2
+
+## Exercice 2.1 - 
+
+```{r}
+set.seed(22)
+# Apply backward differencing on a timeseries created by the following model:
+# create timeseries object
+t <- seq(1, 100, length = 100)
+data <- 2 * t + 0.5 + runif(100, -5, 5)
+ts <- ts(data)
+# backward differencing
+ts_diff <- diff(ts)
+# compare lengths of arrays with
+print("length difference:")
+(length_diff <- length(ts) - length(ts_diff))
+# adf.test(ts) # be careful!
+plot(ts)
+plot(ts_diff)
+```
+
+## Exercice 2.2 - 
+a)
+
+```{r}
+# create reusable function
+generate_and_plot_ts <- function(model) {
+  set.seed(22)
+  t <- seq(1, 100, length = 100)
+  data <- model
+  ts <- ts(data)
+  
+  # backward differencing
+  ts_diff <- diff(ts)
+  plot(ts)
+  plot(ts_diff)
+}
+```
+
+
+```{r}
+generate_and_plot_ts(0.5*t + 1 + runif(100, -1, 1))
+```
+
+
+b)
+```{r}
+generate_and_plot_ts(2*t^2 + 3*t + runif(100, -200, 200))
+```
+
+
+## Exercice 2.3
+
+```{r}
+d <- co2
+glimpse(d)
+head(d)
+tail(d)
+# already a time series object!
+# ts <- ts(d, start = 1959, end = 1998, frequency = 12)
+plot(co2, main = "co2 data")
+
+# generate interactive plot
+d_index <- tk_index(d)
+(p <- plot_ly(x = ~d_index, y = ~d, mode = 'lines'))
+
+acf(d)
+pacf(d)
+# try and error
+# d_diff <- (diff(d, lag = 1))
+# d_diff2 <- (diff(d_diff, lag = 1))
+# d_diff3 <- (diff(d_diff2, lag = 1))
+# d_diff4 <- (diff(d_diff3, lag = 1))
+# d_diff5 <- (diff(d_diff4, lag = 1))
+
+# 5 differences is optimal
+d_diff <- (diff(d, lag = 1, differences = 5))
+acf(d_diff)
+pacf(d_diff)
+
+# check result with interactive plot
+d_diff_index <- tk_index(d_diff)
+(p2 <- plot_ly(x = ~d_diff_index, y = ~d_diff, mode = 'lines'))
+# success!
+```
+
+
+## Exercice 2.4
+
+```{r}
+# help trough https://anomaly.io/seasonal-trend-decomposition-in-r/
+d <- co2
+d_stl <- stl(d, s.window = "periodic")
+plot(d_stl)
+plot(d_stl, xlim=c(1960, 1961))
+
+# seasonal part:
+d_trend <- d_stl$time.series[, 2]
+d_season <- d_stl$time.series[, 1]
+d_random <- d_stl$time.series[, 3]
+# check if it worked correctly
+head(d-(d_trend+d_season+d_random))
+# success - worked!
+
+trend_removed <- d - d_trend
+month <- factor(rep(1:12, 39))
+print("Season means by month")
+(seasn_est <- tapply(trend_removed, month, mean, na.rm = TRUE))
+```
+
+```{r}
+# decompose gives same results as stl()
+d_decomposed = decompose(d, "additive")
+plot(as.ts(d_decomposed$seasonal))
+plot(as.ts(d_decomposed$trend))
+plot(as.ts(d_decomposed$random))
+plot(d_decomposed)
+```
+
+
+## Exercice 2.5
+
+```{r}
+# a)
+d <- read.table(file = "rainDay.txt")
+d$DATE <- dmy(d$DATE)
+glimpse(d)
+
+# b)
+d_ts <- ts(data = d$rain, start = c(2000, 1), end = c(2007, 12), frequency = 12)
+
+# c)
+d_extended <- d %>% 
+  mutate(day_of_week = as.factor(weekdays(DATE)),
+         month = as.factor(months(DATE)),
+         quarter = as.factor(quarters(DATE))) 
+glimpse(d_extended) # worked!
+
+hist(d_ts)
+# hint: the series is right skewed - one should log transform it but...
+
+par(mfrow=c(2,1)) 
+plot(d_ts)
+plot(log(d_ts))
+
+# ... one do not log transform in this case --> otherwise we lose observations!
+# additionally: the time series is not multiplicative
+
+# d)
+# set logical order for weekday and month
+levels(d_extended$day_of_week) = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+
+levels(d_extended$month) = c("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
+
+(weekday_boxplot <- d_extended %>%
+  # group_by(day_of_week) %>% 
+  # mutate(sum_rain_daily = sum(rain)) %>% 
+  # distinct(day_of_week, .keep_all = T) %>% 
+  # ungroup() %>% 
+  # select(day_of_week, rain) %>% 
+  plot_ly(y = ~rain, color = ~day_of_week, type = "box"))
+
+(monthly_boxplot <- d_extended %>%
+  plot_ly(y = ~rain, color = ~month, type = "box"))
+
+(quarter_boxplot <- d_extended %>%
+  plot_ly(y = ~rain, color = ~quarter, type = "box"))
+
+# e) 
+(rain_plot <- plot_ly(x = ~d$DATE, y = ~d$rain, mode = 'lines'))
+  
+```
+
+## Exercice 2.6
+
+a) period: year & time step: day 
+b) period: year & time step: day 
+c) period: weeks & time step: hours to day 
+d) period: year & time step: minutes to day  
+
+
+
+## Exercice 2.7
+
+```{r}
+d <- read.table("hstart.dat.txt")
+ts <- ts(d, start = c(1966, 1), end = c(1974, 12), frequency = 12)
+
+# a) 
+(hstart_plot <- plot_ly(x = ~time(ts) , y = ~ts, mode = 'lines'))
+
+# b)
+# skipped loess method, decompose is easier to use
+d_decomposed = decompose(ts, "additive")
+plot(as.ts(d_decomposed$seasonal))
+plot(as.ts(d_decomposed$trend))
+plot(as.ts(d_decomposed$random))
+plot(d_decomposed)
+```
+
+a) + b) time series is not stationary. Points (1), (2) and (3) mentioned below in Exercice 1.8 are not met. 
+One can see a clear yearly trend. One can further recognize a trend with two peaks. 
+Conclusion: Get seasonality and trend component out of the time series. 
+
+c) do not know how to code the special filter
+
+
+```{r}
+# d)
+# remove trend
+ts_no_seasonality <- ts - d_decomposed$seasonal
+# ts_no_seasonality_and_no_trend <- ts_no_seasonality - d_decomposed$trend
+# check results
+# d_decomposed$random - ts_no_seasonality_and_no_trend
+
+# apply linear trend elimination
+ts_no_seasonality_no_linear_trend <- pracma::detrend(ts_no_seasonality, tt = "linear")
+
+# plot data
+(hstart_plot_2 <- plot_ly(x = ~time(ts) , y = ~ts_no_seasonality_no_linear_trend, mode = 'lines'))
+
+```
+
+
+
+
+## Exercice 2.8
+
+Stationarity if...
+- (1) all Xt are identically distributed 
+- (2) regular mean 
+- (3) finit and regular variance 
+- (4) autocovariance dependes only on lag 
+
+
+```{r warning=FALSE}
+# a)
+Et <- rnorm(100, 0, 1)
+Et_1 <- diff(Et)
+model <- Et[2:100] - (0.5 * Et_1)
+ts <- ts(model)
+(Y1_plot <- plot_ly(x = ~c(1:99), y = ~model, mode = 'lines'))
+acf(ts)
+pacf(ts)
+
+```
+
+a) all criterias are allright - this time series is stationary.
+
+
+b - d) do not understand questions. What is Yt compared with Et?
+
+
+```{r}
+# b)
+Et <- rnorm(100, 0, 1)
+Et_1 <- diff(Et)
+model <- Et[2:100] - (0.5 * Et_1)
+ts <- ts(model)
+(Y1_plot <- plot_ly(x = ~c(1:99), y = ~model, mode = 'lines'))
+acf(ts)
+pacf(ts)
+
+```
+
+
+
+
+
+
+
+
+
+
