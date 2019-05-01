@@ -1,6 +1,7 @@
 ---
 title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 2"
 output:
+  word_document: default
   html_document:
     df_print: paged
 ---
@@ -8,6 +9,7 @@ output:
 ```{r message=FALSE, warning=FALSE}
 library(tseries)
 library(tidyverse)
+library(magrittr)
 library(plotly)
 library(timetk)
 library(lubridate)
@@ -120,54 +122,121 @@ Observation: good agreement only for the first lag. Theoretical PACF just genera
 a)
 
 ```{r}
-# to do
+d <- read_table2("kreatin.txt")
+d %<>% select(-X3)
+plot(d)
+summary(d$gehalt)
+sd(d$gehalt)
+hist(d$gehalt, breaks = 25)
+plot(density(d$gehalt))
+boxplot(d$gehalt)
+
 ```
+
+Assumption: There should be constanct values with error. Meaning: It should be a stationary process. Generated plots above do not confirm the assumption completly. The following aspect is not given: All Xt are not identically distributed.
 
 b)
 
 ```{r}
-# to do
+ts <- ts(d$gehalt)
+acf(ts)
+pacf(ts)
+
 ```
+
+Insights do not confirm a stationary process. There are correlations at multiple lags (e. g. 2, 3, 4, 9). One could recognize partial autocorrelations at multiple lags as well. Conclusion: One could recognize that autocovariance dependends not only at lag h. 
+<br>
+Next possible step: Use differencing at lag 1 and check acf as well as pacf again. 
+
+
 
 ## Exercise 2.5
 
 a)
 
 ```{r}
-# to do
+d <- read.table("cbe.dat.txt")
+ts <- ts(d, frequency = 12, start = c(1956,1))
+ts <- ts[, "elec"]
+plot(ts)
 ```
+
+Because one can see a clear trend as well as a seasonality. We need to adress this issues first.
 
 b)
 
 ```{r}
-# to do
+plot(ts_decomposition <- decompose(ts, type = "multiplicative"))
+plot(ts_decomposition$seasonal[1:12], type = "l") # one saison
+plot(ts_decomposition$random)
+acf(ts_decomposition$random, na.action = na.pass, plot = TRUE)
 ```
+
+One sees a clear increasing trend as well as a yearly saisonality with peaks in summer. The remainder represents structure, e. g. at lag 9 to 11. Conclusion: The residuals don't seem to appear random. That is an issue to be solved.
 
 c)
 
+Averaging window approach
+
 ```{r}
-# to do
+plot(ts_stl <- stl(log(ts), s.window = "periodic"))
+plot(ts_stl_remainder <- ts_stl$time.series[,3])
+acf(ts_stl_remainder)
 ```
+
+Same as above in b): One sees a clear increasing trend as well as a yearly saisonality with peaks in summer. The remainder represents structure, e. g. at lag 9 to 11. Conclusion: The residuals don't seem to appear random. That is an issue to be solved.
+
+<br>
+
+Smoothing window approach
+```{r}
+plot(ts_stl2 <- stl(log(ts), s.window = 12)) # assumption: 12 means a year span in this case
+plot(ts_stl_remainder2 <- ts_stl2$time.series[,3])
+acf(ts_stl_remainder2)
+```
+
+Smooting window approach worked better than the two previous approaches. The remainder seems pretty stochastic with little signs of autocorrelation at lag 8, 19 and 20. Hint: we didn't cover residual analyis so far. Therefore we do not dive deeper regarding this topic now.   
 
 d)
 
-```{r}
-# to do
-```
+Parameter type = "multiplicative": Because there is a seasonality and a trend at the same time and both are changing over time (e. g. their variation).
+<br>
+Log-transformation: Needed to transform the multiplicative to an additive model.  
 
 e)
 
+lag 1
+
 ```{r}
-# to do
+ts_diff_lag1 <- diff(ts, lag = 1)
+plot(ts_diff_lag1)
+acf(ts_diff_lag1)
+pacf(ts_diff_lag1)
 ```
+
+Time series is not stationary after differencing with lag 1. There are obvious autocorrelations at lag 5, 10, 15 and 20. The pacf shows autocorrelations at lag 3, 5, 6, 8, 9, 10 and 11. It would be interesting to analyze the values at lag 5 and 10 in more detail. One should consider applying the log transformation as well.
+
+
+```{r}
+ts_diff_lag12 <- diff(ts, lag = 12)
+head(ts, 36)
+head(ts_diff_lag12, 24)
+plot(ts_diff_lag12)
+acf(ts_diff_lag12)
+pacf(ts_diff_lag12)
+```
+
+Time series is not stationary after differencing with lag 12 as well. There are obvious autocorrelations at lag 1 to 9. The pacf shows autocorrelations at lag 1, 2, 10, 17 and 20. It would be interesting to analyze the values at lag 1 in more detail. One should consider applying the log transformation as well.
+
 
 
 ## Exercise 2.6
+2.6 Adresse wird von Hr. Schütz nachgeliefert, PACF verwenden
 
 a)
 
 ```{r}
-# to do
+# hier weiter
 ```
 
 b)
@@ -178,6 +247,8 @@ b)
 
 
 ## Exercise 2.7
+Prozess / Modell hat die gleiche Formel wie 2.3
+
 a)
 
 ```{r}
