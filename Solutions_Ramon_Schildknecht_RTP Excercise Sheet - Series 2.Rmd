@@ -1,10 +1,15 @@
 ---
 title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 2"
 output:
-  word_document: default
   html_document:
     df_print: paged
+    toc: true
+    theme: united
+  word_document: default
 ---
+
+<br>
+<br>
 
 ```{r message=FALSE, warning=FALSE}
 library(tseries)
@@ -17,35 +22,12 @@ library(pracma)
 library(fma)
 ```
 
-# Template
-
-a)
-
-```{r}
-# to do
-```
-
-b)
-
-```{r}
-# to do
-```
-
-c)
-
-```{r}
-# to do
-```
-
-d)
-
-```{r}
-# to do
-```
-
-
+<br>
+<br>
 
 # Series 2
+
+<br>
 
 ## Exercise 2.1 - Match plots to correlograms
 
@@ -73,18 +55,61 @@ acf(usdeaths)
 True results:
 A -> 2, B -> 3, C -> 1, D -> 4
 
+<br>
+<br>
 
 ## Exercise 2.2 - calculate the lagged scatter plot and the plug-in estimator
-skip for the moment
+
+Failed to solve this task. Reasons: time and complexity (because this task is based on exercise 1.8 level). 
+
+a)
+
+```{r eval=FALSE, include=FALSE}
+# agged scatter plot estimator for the autocorrelation
+# Calculate Pearson Correlation coefficients
+address<-"http://www.maths.adelaide.edu.au/andrew.metcalfe/Data/wave.dat"
+dat<-read.table(address,header=T)
+#generate tsobject
+wave<-ts(dat$waveht)
+#visualise data
+plot(window(wave,1,60),ylab="Height")
+#Lag plot
+lag.plot(wave[1:10],do.lines=FALSE,pch=20)
+wave_diff <- diff(dat$waveht)
+n<-length(wave)
+lagCorrel<-rep(0,n)
+for (i in 1:(n-1)){
+  lagCorrel[i]=cor(wave[1:(n-i)],wave[(i+1):n])
+}
+plot(lagCorrel,type="l")
+lagCorrel
+```
+
+b)
+
+```{r}
+# function plug-in estimator for autocorrelation
+```
 
 
+c) 
 
+```{r}
+# load data
+b <- beer
+c <- chicken
+```
+
+
+<br>
+<br>
 
 ## Exercise 2.3 - AR(1) process
 
 a)
 
 ```{r}
+set.seed(22)
 d <- arima.sim(list(ar = c(0.8)), n = 1000)
 plot(d)
 ```
@@ -93,7 +118,7 @@ b)
 
 ```{r}
 par(mfrow=c(2,1))
-plot(ARMAacf(ar = c(1), lag.max = 100))
+plot(ARMAacf(ar = c(0.8), lag.max = 100), type = "h")
 acf(d, lag.max = 100)
 ```
 
@@ -116,12 +141,14 @@ pacf(d, lag.max = 100)
 
 Observation: good agreement only for the first lag. Theoretical PACF just generates a value for lag 1. All other values are NAs!
 
+<br>
+<br>
 
-## Exercise 2.4
+## Exercise 2.4 Stochastic model
 
 a)
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 d <- read_table2("kreatin.txt")
 d %<>% select(-X3)
 plot(d)
@@ -148,9 +175,10 @@ Insights do not confirm a stationary process. There are correlations at multiple
 <br>
 Next possible step: Use differencing at lag 1 and check acf as well as pacf again. 
 
+<br>
+<br>
 
-
-## Exercise 2.5
+## Exercise 2.5 Decomposition, ACF & PACF
 
 a)
 
@@ -228,41 +256,95 @@ pacf(ts_diff_lag12)
 
 Time series is not stationary after differencing with lag 12 as well. There are obvious autocorrelations at lag 1 to 9. The pacf shows autocorrelations at lag 1, 2, 10, 17 and 20. It would be interesting to analyze the values at lag 1 in more detail. One should consider applying the log transformation as well.
 
+<br>
+<br>
 
-
-## Exercise 2.6
-2.6 Adresse wird von Hr. Schütz nachgeliefert, PACF verwenden
+## Exercise 2.6 AR process
 
 a)
 
+**ts1**
+
 ```{r}
-# hier weiter
+d <- read.table("ts_S3_A2.dat.txt")
+ts <- ts(d)
+# par(mfrow=c(2,1))
+ts1 <- ts[, 1]
+ts2 <- ts[, 2]
+
+cat("mean: ", mean(ts1), " ")
+cat("variance: ", var(ts1))
+plot(ts1)
+acf(ts1)
+# pacf(ts1) # see b)
+Box.test(ts1, lag = 1, type = "Ljung-Box")
 ```
+
+Yes, ts1 appears to follow a stationary process. The parameters mean (equals 51) and variance don't change over time. The autocorrelations plots that there is little to no autocorrelation. Ljung-Box test confirms the insights.
+
+
+**ts2**
+
+```{r}
+cat("mean: ", mean(ts2), " ")
+cat("variance: ", var(ts2))
+plot(ts2)
+acf(ts2)
+# pacf(ts2) # see b)
+Box.test(ts2, lag = 1, type = "Ljung-Box")
+```
+
+Yes, ts2 appears to follow a stationary process. The parameters mean (equals 51) and variance don't change over time. The autocorrelations plots that there is little to no autocorrelation. Ljung-Box test confirms the insights.
+
 
 b)
 
 ```{r}
-# to do
+pacf(ts1)
+pacf(ts2)
+ar(ts1)
+ar(ts2)
 ```
 
+ts1: Yes, with order 3.
+ts2: Yes, with order 4.
 
-## Exercise 2.7
-Prozess / Modell hat die gleiche Formel wie 2.3
+Hint: the ts1 and ts2 were already created by an AR process.
 
-a)
+
+## Exercise 2.7 AR(3) model
+
+a) No
 
 ```{r}
-# to do
+set.seed(22)
+d <- arima.sim(list(ar = c(0.6, -0.5, 0.4)), n = 50)
+plot(d)
 ```
+
 
 b)
 
 ```{r}
-# to do
+par(mfrow = c(2,1))
+plot(ARMAacf(ar = c(0.6, -0.5, 0.4), lag.max = 100), type = "h")
+acf(d, lag.max = 100)
+
+par(mfrow = c(2,1))
+plot(ARMAacf(ar = c(0.6, -0.5, 0.4), lag.max = 100, pacf = TRUE), type = "h")
+pacf(d, lag.max = 100)
 ```
 
-c)
+ACF: theoretical function is quite similar to estimated function. Significant lag 1 is the same and both functions show no significant autocorrelations after lag 1. 
+PACF: theoretical function is different to estimated function. Lag 1 and lag 2 differ to most. They appear to be significant in the theoretical function but not in the estimated one. Otherwise the both functions are quite similar to each other. 
+
+
+c) 
 
 ```{r}
-# to do
+polyroot(c(1, -1, -1, -1))
 ```
+
+alpha1 seems to be a rational zero (y-value equals 0, x in this case = 0.54).
+
+
