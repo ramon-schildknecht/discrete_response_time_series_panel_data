@@ -29,7 +29,7 @@ library(fma)
 
 <br>
 
-## Exercise 3.1 - 
+## Exercise 3.1 - simulations are key
 
 i)
 AR(2): PACF should show a cut-off at lag p = 2
@@ -38,22 +38,105 @@ MA(3): ACF should show a cut-off at lag q = 3
 
 ii)
 
+AR(2) model
+
 ```{r}
 # AR2 model - theoretical autocorrelations
 plot(0:30, ARMAacf(ar = c(0.9, -0.5), lag.max = 30), type = "h",
 ylab = "ACF")
+
 ## Theoretical partial autocorrelations
-plot(1:30, ARMAacf(ar = c(0.9, -0.5),
+plot(1:30, ARMAacf(ar = c(0.9, -0.5), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
 
 ```
 
+MA(3) model
+
+```{r}
+# MA3 model - theoretical autocorrelations
+plot(0:30, ARMAacf(ma = c(0.9, -0.5, -0.4), lag.max = 30), type = "h",
+ylab = "ACF")
+
+## Theoretical partial autocorrelations
+plot(1:30, ARMAacf(ma = c(0.9, -0.5, -0.4), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
+
+```
+
+
 iii)
 
+AR(2) process
+
+```{r}
+# define 3 data sets
+set.seed(22)
+ar2_1_sim <- arima.sim(n = 200, model = list(ar = c(0.9, -0.5)))
+ar2_2_sim <- arima.sim(n = 200, model = list(ar = c(0.9, -0.5)))
+ar2_3_sim <- arima.sim(n = 200, model = list(ar = c(0.9, -0.5)))
+
+xdata <- 1:200
+
+plot(xdata, ar2_1_sim, type="l", col="blue", lty=1, ylim=c(-5,5), ylab="values" )
+lines(xdata, ar2_2_sim, col="red",lty=2)
+lines(xdata, ar2_3_sim, col="green",lty=5)
+```
+Observations: one sees clear recurring lows and peaks in all 3 realisations. The values are between -5 and 5.
+
+
+MA(3) process
+
+Just used a length of 52 for better pattern examination.
+
+```{r}
+# define 3 data sets
+set.seed(22)
+ma3_1_sim <- arima.sim(n = 52, model = list(ma = c(0.9, -0.5, -0.4)))
+ma3_2_sim <- arima.sim(n = 52, model = list(ma = c(0.9, -0.5, -0.4)))
+ma3_3_sim <- arima.sim(n = 52, model = list(ma = c(0.9, -0.5, -0.4)))
+
+xdata <- 1:52
+
+plot(xdata, ma3_1_sim, type="l", col="blue", lty=1, ylim=c(-5,5), ylab="values" )
+lines(xdata, ma3_2_sim, col="red",lty=2)
+lines(xdata, ma3_3_sim, col="green",lty=5)
+```
+
+Observations: one sees clear recurring lows and peaks in all 3 realisations which are also close to each other over all 3 realisations. The values are between -4 and 4. 
 
 iv)
 
+AR(2) process
+
+```{r}
+set.seed(22)
+ar2_1_sim <- arima.sim(n = 200, model = list(ar = c(0.9, -0.5)))
+time = 1:200
+plot(time, ar2_1_sim, type="l", col="blue", lty=1, ylim=c(-5,5), ylab="values" )
+acf(ma3_1_sim)
+pacf(ma3_1_sim)
+```
+
+Obervations: ACF shows clear cut off after lag 2. PACF shows clear cut off after lag 2. This is a similar result as seen in the simulated data above.
 
 <br>
+
+MA(3) process
+
+Just used a length of 52 for better pattern examination.
+
+```{r}
+set.seed(22)
+ma3_1_sim <- arima.sim(n = 52, model = list(ma = c(0.9, -0.5, -0.4)))
+time = 1:52
+plot(time, ma3_1_sim, type="l", col="blue", lty=1, ylim=c(-4,4), ylab="values" )
+acf(ma3_1_sim)
+pacf(ma3_1_sim)
+```
+
+Obervations: ACF shows clear cut off after lag 2. PACF shows clear cut off after lag 1. ACF shows a similar result as seen in the simulated data above. PACF shows quite a different result.
+
+<br>
+
 
 ## Exercise 3.2 - 
 
