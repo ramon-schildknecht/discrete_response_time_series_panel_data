@@ -1,5 +1,6 @@
 ---
 title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 3"
+author: "[Ramon Schildknecht](https://www.linkedin.com/in/ramon-schildknecht-36301756/)"
 output:
   html_document:
     df_print: paged
@@ -32,8 +33,9 @@ library(forecast)
 
 ## Exercise 3.1 - simulations are key
 
-i)♫
+i)
 AR(2): PACF should show a cut-off at lag p = 2
+<br>
 MA(3): ACF should show a cut-off at lag q = 3
 
 
@@ -234,6 +236,7 @@ checkresiduals(r_burg$resid)
 
 Residuals seem to be allright. No autocorrelation is detected and the residuals look normally distributed.
 
+<br>
 
 d)
 
@@ -257,11 +260,100 @@ Confidence intervall for coefficient intercept with mean 51.2658 is from 50.3521
 
 ## Exercise 3.4 - ARIMA
 
+Load data
 
 ```{r}
-
+d_force <- read.table("http://stat.ethz.ch/Teaching/Datasets/WBL/kraft.dat",
+header = FALSE)
+ts_force <- ts(d_force[, 1])
+plot(ts_force)
 ```
 
 
+a)
+
+```{r}
+ts_forceA <- window(ts_force, end = 280)
+tsdisplay(ts_forceA)
+acf(ts_forceA)
+```
+
+Yes. The expected behaviour is a lag at every multiple of about 2 seconds multiplied by 1.5 seconds of measurements. E. g. at lag 4 (6 seconds) or lag 8 (12 seconds).
+
+The ACF plots confirms the expected behaviour. 
+
+<br>
+
+b)
+
+```{r}
+# PACF
+pacf(ts_forceA) # cut-off at p = 6
+
+# ar(6) model
+ar_force <- ar(ts_forceA, method = "mle")
+print("mle-method:")
+ar_force$aic
+which.min(ar_force$aic)
+
+
+ar_force2 <- ar(ts_forceA, method = "burg")
+print("burg-method:")
+ar_force2$aic
+which.min(ar_force2$aic)
+
+ar_force3 <- ar(ts_forceA, method = "yw")
+print("yw-method:")
+ar_force3$aic
+which.min(ar_force2$aic)
+
+# tried CSS-ML as well
+# lags <- seq(1,16)
+# for (i in lags) {
+#   fit_MLE <- arima(ts_forceA, order = c(i, 0, 0), method = "css-mle")
+#   cat("AR(", i, "):", sep = "")
+#   print(fit_MLE$aic)
+# }
+ 
+```
+
+Maximum likelihood estimator: best lag = 10
+Burg's algorithm & Yule-Walker equations: best lag = 17
+
+<br>
+
+c)
+
+```{r}
+ar_lme <- arima(ts_forceA, order = c(10, 0, 0), method = "ML")
+summary(ar_lme)
+
+# select residuals and display them
+residuals <- ar_lme$residuals
+tsdisplay(residuals)
+
+qqnorm(ar_lme$residuals,main="Normal Q-Q Plot: AR(10)")
+qqline(ar_lme$residuals)
+```
+
+Residuals looking quite nice. However there seems to be a autocorrelation at lag 8 which must be further analysed. Q-Q plot shows a approximation to normal distribution. The model is in general appropriate for this time series. One can observe from the results in b) that a Yule Walker equation model with lag 17 could even show better results than this model. 
+
+<br>
+
+d)
+
+```{r}
+force_pred <- predict(ar_force, n.ahead = 40)
+plot(ts_force, lty = 3)
+lines(ts_forceA, lwd = 2)
+lines(force_pred$pred, lwd = 2, col = "orange")
+lines(force_pred$pred + force_pred$se * 1.96, col = "red")
+lines(force_pred$pred - force_pred$se * 1.96, col = "red")
+```
+
+The model predicts the values quite well, because the original data is between the confidence interval values. 
+
+<br>
+<br>
 
 
