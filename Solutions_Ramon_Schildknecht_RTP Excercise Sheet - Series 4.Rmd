@@ -1,0 +1,191 @@
+---
+title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 4"
+author: "[Ramon Schildknecht](https://www.linkedin.com/in/ramon-schildknecht-36301756/)"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    theme: united
+  word_document: default
+---
+
+<br>
+<br>
+
+```{r packages, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tseries)
+library(tidyverse)
+library(magrittr)
+library(plotly)
+library(timetk)
+library(lubridate)
+library(pracma)
+library(fma)
+library(forecast)
+install.packages("fpp")
+library(fpp)
+```
+
+<br>
+<br>
+
+# Series 4
+
+<br>
+
+## Exercise 4.1 - simulations
+
+a)
+
+ARMA(1,2) model
+
+```{r}
+# AR(1,2) model - theoretical autocorrelations
+plot(0:30, ARMAacf(ar = c(0.75), ma = c(-0.3, 0.25), lag.max = 30), type = "h",
+ylab = "ACF")
+
+## Theoretical partial autocorrelations
+plot(1:30, ARMAacf(ar = c(0.75), ma = c(-0.3, 0.25 ), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
+
+```
+
+
+b)
+
+ARMA(2,1) model
+
+```{r}
+# AR(2,1) model - theoretical autocorrelations
+plot(0:30, ARMAacf(ar = c(0.75, -0.3), ma = c(0.25), lag.max = 30), type = "h",
+ylab = "ACF")
+
+## Theoretical partial autocorrelations
+plot(1:30, ARMAacf(ar = c(0.75, -0.3), ma = c(0.25), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
+
+```
+
+
+c)
+
+```{r}
+ts.sim <- arima.sim(list(order = c(2,1,2), ar = c(0.5, 0.5), ma = c(-0.4, 0.3)), n = 200)
+```
+
+Because AR part of model is not stationary!
+
+d)
+
+ARMA(3,1) is the equivalent model because we can take the differencing term (1 -B)^d and use it in the AR part. 
+
+<br>
+
+
+## Exercise 4.2 - sunspotarea
+
+a)
+
+```{r}
+d <- sunspotarea
+glimpse(d)
+hist(d)
+```
+
+Because it is right-skewed.
+
+
+b)
+
+```{r}
+d2 <- d %>% log()
+d_to_1974 <- window(d, end = 1974)
+tsdisplay(d_to_1974)
+acf(d_to_1974)
+pacf(d_to_1974)
+(fit <- arima(d_to_1974, order = c(10, 0, 3)))
+tsdisplay(fit$residuals)
+```
+
+Suitable model: ARMA(10, 3). Residuals looking good.
+
+
+<br>
+
+
+
+## Exercise 4.3 - beluga whales model
+
+a)
+
+```{r}
+d_beluga <- read.table("http://stat.ethz.ch/Teaching/Datasets/WBL/beluga.dat", header = TRUE)
+d_beluga_ts <-  ts(d_beluga)
+(fit <- lm(NURSING ~ ., d_beluga))
+summary(fit)
+```
+
+Bouts and lock-ons seems to have a significant impact on nursing success. Day or night is not important. 
+
+b)  hier weiter
+
+```{r}
+
+```
+
+
+c)
+
+```{r}
+
+```
+
+
+d)
+
+```{r}
+
+```
+
+e)
+
+```{r}
+
+```
+
+
+<br>
+
+
+## Exercise 4.3 - varvas
+
+a)
+
+```{r}
+
+```
+
+
+b)
+
+```{r}
+
+```
+
+
+c)
+
+```{r}
+
+```
+
+
+d)
+
+```{r}
+
+```
+
+<br>
+
+
+
+
