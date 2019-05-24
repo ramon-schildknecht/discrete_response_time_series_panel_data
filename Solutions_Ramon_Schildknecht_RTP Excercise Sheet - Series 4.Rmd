@@ -22,8 +22,8 @@ library(lubridate)
 library(pracma)
 library(fma)
 library(forecast)
-install.packages("fpp")
 library(fpp)
+library(car)
 ```
 
 <br>
@@ -121,35 +121,41 @@ d_beluga <- read.table("http://stat.ethz.ch/Teaching/Datasets/WBL/beluga.dat", h
 d_beluga_ts <-  ts(d_beluga)
 (fit <- lm(NURSING ~ ., d_beluga))
 summary(fit)
+fit_res <- fit$residuals
+tsdisplay(fit_res)
+car::qqPlot(fit_res)
+hist(fit_res)
 ```
 
-Bouts and lock-ons seems to have a significant impact on nursing success. Day or night is not important. 
+Bouts and lock-ons seems to have a significant impact on nursing success. Day or night is not important. There is some structure left in the residuals. One must further investigate the dependency structure at lag 1 and 2 in (P)ACF. The residuals seem to be normally distributed.
 
-b)  hier weiter
+b)  
 
 ```{r}
-
+# use AR(2) model according to PACF result of residuals above
+f_burg <- ar.burg(fit_res, order = 2)
+# summary(f_burg)
+f_burg$x.mean
+f_burg$ar
 ```
+
+The mean is close to zero (6.67e-17). The parameter alpha 1 is about 0.28 and alpha 2 about 0.32.
 
 
 c)
 
 ```{r}
-
+library(nlme) # Load the package containing the procedure gls()
+d_beluga_gls <- gls(NURSING ~ BOUTS + LOCKONS + DAYNIGHT + PERIOD, 
+                    data = d_beluga, 
+                    correlation = corARMA(form = ~ PERIOD, p = f_burg$order, q = 0,
+                                          fixed = FALSE), method = "ML")
+summary(d_beluga_gls)
+d_resid <- ts(resid(d_beluga_gls ))
 ```
 
 
-d)
-
-```{r}
-
-```
-
-e)
-
-```{r}
-
-```
+d) - f) Leave this exercises out and use them as proper exam preparation.
 
 
 <br>
