@@ -67,7 +67,7 @@ plot(1:30, ARMAacf(ar = c(0.75, -0.3), ma = c(0.25), lag.max = 30, pacf = TRUE),
 
 c)
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 ts.sim <- arima.sim(list(order = c(2,1,2), ar = c(0.5, 0.5), ma = c(-0.4, 0.3)), n = 200)
 ```
 
@@ -166,29 +166,41 @@ d) - f) Leave this exercises out and use them as proper exam preparation.
 a)
 
 ```{r}
-
+t_url <- "http://stat.ethz.ch/Teaching/Datasets/WBL/varve.dat"
+d_varve <- ts(scan(t_url)[201:550])
+glimpse(d_varve)
+plot(d_varve)
+hist(d_varve)
 ```
 
+Because it is right-skewed.
 
 b)
 
 ```{r}
-
+d_varve_log <- log(d_varve)
+tsdisplay(d_varve_log)
+d_varve_diff_log <- diff(d_varve, differences = 1)
+tsdisplay(d_varve_diff_log)
 ```
 
+No, it is not stationary. There seems to be a trend because of the slow decay in the ACF. There could be a seasonal component due to the oscillatory behaviour as well. One could try to difference the series. But there is still a autocorrelation left at lag 1 to 5 in the PACF.
 
 c)
 
 ```{r}
-
+auto.arima(d_varve, seasonal = T, stationary = F, ic = "aic")
+(varve_fit <- arima(d_varve, order = c(1, 1, 1), seasonal = c(1, 1, 1)))
+na.omit(varve_fit$coef)
 ```
 
 
 d)
 
-```{r}
+Y(t) = 0.1402 * Y(t-1) + -0.9656 * E(t) + 0.1402 * ??? -0.956 * ???.
 
-```
+Need some help here. How to I get the results above in the correct formula?
+Looked for help but nothing helped me to solve the task (e. g. https://stats.stackexchange.com/questions/129901/sarima-model-equation).
 
 <br>
 
