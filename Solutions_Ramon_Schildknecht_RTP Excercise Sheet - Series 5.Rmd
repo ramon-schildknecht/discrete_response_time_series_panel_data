@@ -1,0 +1,178 @@
+---
+title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 4"
+author: "[Ramon Schildknecht](https://www.linkedin.com/in/ramon-schildknecht-36301756/)"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    theme: united
+  word_document: default
+---
+
+<br>
+<br>
+
+```{r packages, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tseries)
+library(tidyverse)
+library(magrittr)
+library(plotly)
+library(timetk)
+library(lubridate)
+library(pracma)
+library(fma)
+library(forecast)
+library(fpp)
+library(car)
+library(astsa)
+library(dygraphs)
+```
+
+<br>
+<br>
+
+# Series 5
+
+<br>
+
+## Exercise 5.1 - Stationarity Rederal Reserve Board Production Index
+
+a) 
+
+```{r}
+d <- prodn
+plot(d)
+```
+
+There is a clear trend recognisable.
+
+
+b)
+
+There are several available options:
+
+- Linear regression
+- Backward difference
+- Filtration
+
+c)
+
+First guess: SARIMA could fit.
+
+```{r}
+d_decomposition <- stl(d, s.window = 12)
+plot(d_decomposition)
+d_dygraph <- cbind(origin = d,
+                   seasonality = d_decomposition$time.series[,"seasonal"], 
+                   trend = d_decomposition$time.series[,"trend"], 
+                   remainder = d_decomposition$time.series[,"remainder"])
+dygraph(d_dygraph)
+# dygraph(d_dygraph[,"trend"])
+tsdisplay(d)
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(1, 1, 1)))
+(d_sarima <- arima(d, order = c(1,1,0), seasonal = c(1, 1, 1)))
+(d_sarima <- arima(d, order = c(1,0,1), seasonal = c(1, 1, 1)))
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(0, 1, 1))) # improved aic
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(0, 0, 1))) 
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(0, 2, 0)))
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(0, 1, 3))) # improved aic
+(d_sarima <- arima(d, order = c(1,1,1), seasonal = c(0, 1, 4)))
+```
+
+The best result performs the following SARIMA model: <br>
+arima(d, order = c(1,1,1), seasonal = c(0, 1, 3)))
+
+
+<br>
+
+
+## Exercise 5.2 - sunspot data & AR model
+
+Preparation
+
+```{r}
+lsunspot100 <- window(log(sunspotarea), start = 1875, end = 1974)
+fit_ar10 <- arima(lsunspot100, order = c(10, 0, 0))
+```
+
+<br>
+
+a)
+
+```{r}
+lsunspot100 <- window(log(sunspotarea), start = 1875, end = 1974)
+fit_ar10 <- arima(lsunspot100, order = c(10, 0, 0))
+predictions <- predict(fit_ar10, n.ahead = 100)
+plot(lsunspot100, xlim = c(1875, 2074), ylab = "yearly avg sunspot area")
+abline(h = fit_ar10$coef["intercept"], lty = 2, col = "blue")
+lines(predictions$pred, col = "green")
+```
+
+The predictions show a damped sinusoid towards the global mean. Every cycle reduces the scattering of the predicted points. 
+
+b)
+
+```{r}
+lsunspot100_2 <- window(log(sunspotarea), start = 1875, end = 2011)
+fit_ar10_2 <- arima(ts(lsunspot100_2, start = 1875, end = 1974), order = c(10, 0, 0))
+predictions_2 <- predict(fit_ar10_2, n.ahead = 37)
+plot(lsunspot100_2, xlim = c(1875, 2074), ylab = "yearly avg sunspot area")
+abline(h = fit_ar10_2$coef["intercept"], lty = 2, col = "blue")
+lines(predictions_2$pred, col = "green")
+
+cat("Mean squared forecasting error: ", (msfe <- (sum((as.numeric(tail(lsunspot100_2, 37)) - as.numeric(predictions_2$pred))^2))/length(lsunspot100_2)))
+plot((as.numeric(tail(lsunspot100_2, 37)) - as.numeric(predictions_2$pred))^2, type = "l",  xlab = "time", ylab = "msfe")
+
+```
+
+The predictions getting more inaccurate over time The mean squared forecasting error (msfe) is about 0.2. The msfe is very high at the end because there is a outlier in the time series. One could expect that the model will not fit very well for future predicted points.
+
+<br>
+
+
+
+## Exercise 5.3 - SARIMA with airplane data
+
+data preparation
+
+```{r}
+d <- AirPassengers
+d_1949_to_1956 <- window(d, end = c(1956, 12))
+plot(d_1949_to_1956)
+```
+
+
+a) 
+
+```{r}
+hist(d_1949_to_1956)
+plot(stl(d_1949_to_1956, s.window = 12))
+tsdisplay(d_1949_to_1956)
+tsdisplay(diff(d_1949_to_1956))
+pacf(d_1949_to_1956) # lag 11 seems suitable for ar()
+d_1949_to_1956_arima_coefficients <- auto.arima(d_1949_to_1956)
+fit_1949_to_1956 <- arima(d_1949_to_1956, order = c(1, 1, 0), seasonal = c(1, 1, 0))
+predictions <- predict(fit_1949_to_1956, n.ahead = 48)
+
+plot(d_1949_to_1956, lty = 3, xlim = c(1949, 1961), ylim = c(0, 800), ylab = "air passengers (unit = 1000)")
+lines(d_1949_to_1956, lwd = 1)
+lines(predictions$pred, lwd = 2, col = "darkred")
+lines(predictions$pred+predictions$se*1.96, col="tomato")
+lines(predictions$pred-predictions$se*1.96, col="tomato")
+lines(window(d, start = c(1957, 01), lwd = 2, end = c(1960, 12)), col = "springgreen")
+
+
+# the easier way with forecast | dark grey = 80% confidence interval | grey = 90% ci)
+plot(forecast(fit_1949_to_1956, h = 48))
+lines(window(d, start = c(1957, 01), lwd = 2, end = c(1960, 12)), col = "springgreen")
+```
+
+
+
+b)
+
+
+c)
+
+
+<br>
