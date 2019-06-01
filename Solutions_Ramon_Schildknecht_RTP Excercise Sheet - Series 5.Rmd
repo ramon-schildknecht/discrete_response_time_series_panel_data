@@ -1,5 +1,5 @@
 ---
-title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 4"
+title: "Solutions_Ramon_Schildknecht_RTP Excercise Sheet - Series 5"
 author: "[Ramon Schildknecht](https://www.linkedin.com/in/ramon-schildknecht-36301756/)"
 output:
   html_document:
@@ -138,7 +138,7 @@ data preparation
 ```{r}
 d <- AirPassengers
 d_1949_to_1956 <- window(d, end = c(1956, 12))
-plot(d_1949_to_1956)
+plot(d_1949_to_1956) # seasonality seems to be 12 months
 ```
 
 
@@ -149,10 +149,14 @@ hist(d_1949_to_1956)
 plot(stl(d_1949_to_1956, s.window = 12))
 tsdisplay(d_1949_to_1956)
 tsdisplay(diff(d_1949_to_1956))
-pacf(d_1949_to_1956) # lag 11 seems suitable for ar()
-d_1949_to_1956_arima_coefficients <- auto.arima(d_1949_to_1956)
+pacf(diff(d_1949_to_1956))
+d_1949_to_1956_arima_coefficients <- auto.arima(d_1949_to_1956, ic = "aic")
+d_1949_to_1956_arima_coefficients_2 <- auto.arima(d_1949_to_1956, ic = "bic")
+d_1949_to_1956_arima_coefficients_3 <- auto.arima(d_1949_to_1956, ic = "aicc")
 fit_1949_to_1956 <- arima(d_1949_to_1956, order = c(1, 1, 0), seasonal = c(1, 1, 0))
-predictions <- predict(fit_1949_to_1956, n.ahead = 48)
+tsdisplay(fit_1949_to_1956$residuals)
+
+predictions <- predict(fit_1949_to_1956, n.ahead = 48) # residuals looking good
 
 plot(d_1949_to_1956, lty = 3, xlim = c(1949, 1961), ylim = c(0, 800), ylab = "air passengers (unit = 1000)")
 lines(d_1949_to_1956, lwd = 1)
@@ -171,8 +175,57 @@ lines(window(d, start = c(1957, 01), lwd = 2, end = c(1960, 12)), col = "springg
 
 b)
 
+```{r}
+fit <- stl(d, s.window = "periodic")
+plot(fit)
+season <- fit$time.series[, 1]
+trend <- fit$time.series[, 2]
+remainder <- head(fit$time.series[, 3], 96)
+
+# trend forecast
+xx <- time(tail(trend, 48))
+yy <- tail(trend, 48)
+fit_regression <- lm(yy ~ xx)
+t_forecast <- 306 + (0:47)/12 * coef(fit_regression)[2] # is b0 (306) correctly choosen? > see week 5 slide 57
+plot(t_forecast)
+
+# seasonal forecast
+l1y <- window(season, start = c(1956, 1), end = c(1956, 12))
+s_forecast <- ts(l1y, start = c(1957, 1), end = c(1960, 12), frequency =  12)
+plot(s_forecast)
+
+# remainder fitting
+tsdisplay(remainder)
+remainder_coefficients <- auto.arima(remainder, ic = "aic")
+remainder_coefficients2 <- auto.arima(remainder, ic = "bic")
+remainder_coefficients3 <- auto.arima(remainder, ic = "aicc")
+remainder_coefficients
+remainder_coefficients2
+remainder_coefficients3
+fit_remainder <- arima(remainder, order = c(3, 0, 1), seasonal = c(1, 1, 0), include.mean = F)
+tsdisplay(fit_remainder$residuals)
+fit_remainder2 <- arima(remainder, order = c(3, 1, 1), seasonal = c(1, 1, 0), include.mean = F)
+tsdisplay(fit_remainder2$residuals) # differencing does not improve the result
+r_forecast <- predict(fit_remainder, n.ahead = 48)$pred
+plot(r_forecast)
+
+forecast_merged <- t_forecast + s_forecast + r_forecast
+plot(forecast_merged)
+
+plot(d_1949_to_1956, lty = 3, xlim = c(1949, 1961), ylim = c(0, 800), ylab = "air passengers (unit = 1000)")
+lines(d_1949_to_1956, lwd = 1)
+lines(forecast_merged, lwd = 2, col = "darkred")
+lines(window(d, start = c(1957, 01), lwd = 2, end = c(1960, 12)), col = "springgreen")
+
+```
+
+The model delivers quite accurate results. The residuals are allright. <br>
+I don't know if my intercept of 306 was choosen rightly? This value has a huge impact on the model results. 
+
+One does not need a prediction interval with this method. Reason: The method uses partly the acutal data to generate the predictions. 
 
 c)
 
+The SARIMA model is more accurate and is therefore the better solution for fitting the airplane data. Both models could improve by fitting the seasonal peaks even better. 
 
 <br>
