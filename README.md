@@ -10,5 +10,6 @@ You'll find the solutions in the files above and here on RPubs:
 - [Solutions to Serie 4](https://rpubs.com/ramon_schildknecht/hslu_rtp_series4)
 - [Solutions to Serie 5](https://rpubs.com/ramon_schildknecht/hslu_rtp_series5)
 
+<br>
 
-Enjoy!
+Enjoy! :relaxed:
